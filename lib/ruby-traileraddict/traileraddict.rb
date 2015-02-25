@@ -12,8 +12,20 @@ class TrailerAddict
     "http://www.traileraddict.com/search.php?q="
   end
   
+  def self.imdb_search_url
+    "http://api.traileraddict.com/?imdb="    
+  end
+  
   def self.get_tag_for(movie_name)
     response = self.get_url(self.base_search_url + URI.escape(movie_name))
+    return nil if(response.code != '200')
+    search_page_object = Hpricot( response.body )
+    return nil if( search_page_object.search(".leftcolumn .searchthumb:first a")[0].nil? )
+    tag = search_page_object.search(".leftcolumn .searchthumb:first a")[0]['href'].gsub("/tags/", '')
+  end
+  
+  def self.get_tag_for_imdb(imdbid)
+    response = self.get_url(self.imdb_search_url + imdbid)
     return nil if(response.code != '200')
     search_page_object = Hpricot( response.body )
     return nil if( search_page_object.search(".leftcolumn .searchthumb:first a")[0].nil? )
@@ -35,6 +47,37 @@ class TrailerAddict
       return ''
     end
   end
+  def self.imdb_api_call(imdbid,options={})
+     raise ArgumentError, "movie_tag must be a string" unless(imdbid.is_a?(Integer))
+       options = {
+         :width=> "000",
+         :count=>10,
+         :imdb => imdbid
+       }.merge(options)
+       option_string = "?" + URI.escape(options.to_a.map{|x| x[0].to_s + "=" + x[1].to_s}.join("&"))
+       response = self.get_url(self.base_api_url + option_string)
+       if(response.code == '200')
+         return response.body  
+       else
+         return ''
+       end
+    
+  end
+  
+  def self.get_trailer_by_imdb(imdbid)
+   api_response = self.imdb_api_call(imdbid)
+    xml = Hpricot::XML( api_response )
+    embed_codes = xml.search("embed")
+    resp=Array.new
+    embed_codes.each do |e|
+      resp<<e.inner_text
+    end
+    
+    return nil if( resp.size < 1 )
+    return resp
+    
+  end
+  
   
   def self.get_trailer_embed_code(movie_name)
     movie_tag = self.get_tag_for(movie_name)

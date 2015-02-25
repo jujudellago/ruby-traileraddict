@@ -2,6 +2,10 @@
 
 ruby-traileraddict is a very simple API wrapper for TrailerAddict.com. It allows you to easily get the embed code necessary for displaying a trailer for any movie in their database.
 
+
+Modivied by jujudellago to work with the updated API, still a work in prorgress !!!!
+
+
 === Installation
 
   gem install ruby-traileraddict
